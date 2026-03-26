@@ -5,7 +5,6 @@ import dev.sterner.guardvillagers.GuardVillagers;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import net.minecraft.entity.ai.brain.MemoryModuleState;
 import net.minecraft.entity.ai.brain.MemoryModuleType;
-import net.minecraft.entity.ai.brain.task.LookTargetUtil;
 import net.minecraft.entity.ai.brain.task.MultiTickTask;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -17,7 +16,10 @@ public class ShareGossipWithGuard extends MultiTickTask<VillagerEntity> {
 
     @Override
     protected boolean shouldRun(ServerWorld serverWorld, VillagerEntity villagerEntity) {
-        return LookTargetUtil.canSee(villagerEntity.getBrain(), MemoryModuleType.INTERACTION_TARGET, GuardVillagers.GUARD_VILLAGER);
+        return villagerEntity.getBrain()
+                .getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET)
+                .filter(e -> e instanceof GuardEntity)
+                .isPresent();
     }
 
     @Override
@@ -27,21 +29,29 @@ public class ShareGossipWithGuard extends MultiTickTask<VillagerEntity> {
 
     @Override
     protected void run(ServerWorld serverWorld, VillagerEntity villagerEntity, long time) {
-        GuardEntity guard = (GuardEntity) villagerEntity.getBrain().getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get();
-        LookTargetUtil.lookAtAndWalkTowardsEachOther(villagerEntity, guard, 0.5F, 2);
+        GuardEntity guard = (GuardEntity) villagerEntity.getBrain()
+                .getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get();
+        walkTowardsEachOther(villagerEntity, guard, 0.5F, 2);
     }
 
     @Override
     protected void keepRunning(ServerWorld serverWorld, VillagerEntity villagerEntity, long time) {
-        GuardEntity guard = (GuardEntity) villagerEntity.getBrain().getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get();
+        GuardEntity guard = (GuardEntity) villagerEntity.getBrain()
+                .getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get();
         if (villagerEntity.squaredDistanceTo(guard) < 5.0D) {
-            LookTargetUtil.lookAtAndWalkTowardsEachOther(villagerEntity, guard, 0.5F, 2);
+            walkTowardsEachOther(villagerEntity, guard, 0.5F, 2);
             guard.gossip(villagerEntity, time);
         }
     }
 
     @Override
-    protected void finishRunning(ServerWorld pLevel, VillagerEntity villagerEntity, long time) {
+    protected void finishRunning(ServerWorld serverWorld, VillagerEntity villagerEntity, long time) {
         villagerEntity.getBrain().forget(MemoryModuleType.INTERACTION_TARGET);
+    }
+
+    private void walkTowardsEachOther(VillagerEntity villager, GuardEntity guard, float speed, int completionRange) {
+        villager.getLookControl().lookAt(guard, 30.0f, 30.0f);
+        guard.getLookControl().lookAt(villager, 30.0f, 30.0f);
+        villager.getNavigation().startMovingTo(guard, speed);
     }
 }

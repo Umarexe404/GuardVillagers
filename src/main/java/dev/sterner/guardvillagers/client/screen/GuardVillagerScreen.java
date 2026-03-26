@@ -1,5 +1,6 @@
 package dev.sterner.guardvillagers.client.screen;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.sterner.guardvillagers.GuardVillagers;
 import dev.sterner.guardvillagers.GuardVillagersConfig;
@@ -11,6 +12,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.gui.screen.ButtonTextures;
@@ -80,33 +82,19 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
 
     @Override
     protected void drawBackground(DrawContext ctx, float delta, int mouseX, int mouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         int i = (this.width - this.backgroundWidth) / 2;
         int j = (this.height - this.backgroundHeight) / 2;
-        ctx.drawTexture(GUARD_GUI_TEXTURES, i, j, 0, 0, this.backgroundWidth, this.backgroundHeight);
+        ctx.drawTexture(RenderPipelines.GUI_TEXTURED, GUARD_GUI_TEXTURES, i, j, 0f, 0f, this.backgroundWidth, this.backgroundHeight, 256, 256);
         //InventoryScreen.drawEntity(ctx, i + 51, j + 75, 30    , (float) (i + 51) - this.mousePosX, (float) (j + 75 - 50) - this.mousePosY, this.guardEntity);
         InventoryScreen.drawEntity(ctx, i + 51, j + 75, (i + 51), (j + 75 - 50), 30, 0.0625f, this.mousePosX, this.mousePosY, this.guardEntity);
     }
-
-    /*
-    CONTAINER(Identifier.ofVanilla("hud/heart/container"), Identifier.ofVanilla("hud/heart/container_blinking"), Identifier.ofVanilla("hud/heart/container"), Identifier.ofVanilla("hud/heart/container_blinking"), Identifier.ofVanilla("hud/heart/container_hardcore"), Identifier.ofVanilla("hud/heart/container_hardcore_blinking"), Identifier.ofVanilla("hud/heart/container_hardcore"), Identifier.ofVanilla("hud/heart/container_hardcore_blinking")),
-        NORMAL(Identifier.ofVanilla("hud/heart/full"), Identifier.ofVanilla("hud/heart/full_blinking"), Identifier.ofVanilla("hud/heart/half"), Identifier.ofVanilla("hud/heart/half_blinking"), Identifier.ofVanilla("hud/heart/hardcore_full"), Identifier.ofVanilla("hud/heart/hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/hardcore_half"), Identifier.ofVanilla("hud/heart/hardcore_half_blinking")),
-        POISONED(Identifier.ofVanilla("hud/heart/poisoned_full"), Identifier.ofVanilla("hud/heart/poisoned_full_blinking"), Identifier.ofVanilla("hud/heart/poisoned_half"), Identifier.ofVanilla("hud/heart/poisoned_half_blinking"), Identifier.ofVanilla("hud/heart/poisoned_hardcore_full"), Identifier.ofVanilla("hud/heart/poisoned_hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/poisoned_hardcore_half"), Identifier.ofVanilla("hud/heart/poisoned_hardcore_half_blinking")),
-        WITHERED(Identifier.ofVanilla("hud/heart/withered_full"), Identifier.ofVanilla("hud/heart/withered_full_blinking"), Identifier.ofVanilla("hud/heart/withered_half"), Identifier.ofVanilla("hud/heart/withered_half_blinking"), Identifier.ofVanilla("hud/heart/withered_hardcore_full"), Identifier.ofVanilla("hud/heart/withered_hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/withered_hardcore_half"), Identifier.ofVanilla("hud/heart/withered_hardcore_half_blinking")),
-        ABSORBING(Identifier.ofVanilla("hud/heart/absorbing_full"), Identifier.ofVanilla("hud/heart/absorbing_full_blinking"), Identifier.ofVanilla("hud/heart/absorbing_half"), Identifier.ofVanilla("hud/heart/absorbing_half_blinking"), Identifier.ofVanilla("hud/heart/absorbing_hardcore_full"), Identifier.ofVanilla("hud/heart/absorbing_hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/absorbing_hardcore_half"), Identifier.ofVanilla("hud/heart/absorbing_hardcore_half_blinking")),
-        FROZEN(Identifier.ofVanilla("hud/heart/frozen_full"), Identifier.ofVanilla("hud/heart/frozen_full_blinking"), Identifier.ofVanilla("hud/heart/frozen_half"), Identifier.ofVanilla("hud/heart/frozen_half_blinking"), Identifier.ofVanilla("hud/heart/frozen_hardcore_full"), Identifier.ofVanilla("hud/heart/frozen_hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/frozen_hardcore_half"), Identifier.ofVanilla("hud/heart/frozen_hardcore_half_blinking"));
-
-     */
 
     private static final Identifier ARMOR_EMPTY_TEXTURE = Identifier.ofVanilla("hud/armor_empty");
     private static final Identifier ARMOR_HALF_TEXTURE = Identifier.ofVanilla("hud/armor_half");
     private static final Identifier ARMOR_FULL_TEXTURE = Identifier.ofVanilla("hud/armor_full");
 
     private void drawHeart(DrawContext context, HeartType type, int x, int y, boolean half) {
-        RenderSystem.enableBlend();
-        context.drawGuiTexture(type.getTexture(half), x, y, 9, 9);
-        RenderSystem.disableBlend();
+        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, type.getTexture(half), x, y, 9, 9);
     }
 
     @Override
@@ -136,14 +124,14 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         }
         //Armor
         for (int i = 0; i < 10; i++) {
-            ctx.drawGuiTexture(ARMOR_EMPTY_TEXTURE, (i * 8) + 80, 30, 9, 9);
+            ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_EMPTY_TEXTURE, (i * 8) + 80, 30, 9, 9);
         }
         for (int i = 0; i < armor / 2; i++) {
             if (armor % 2 != 0 && armor / 2 == i + 1) {
-                ctx.drawGuiTexture(ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
-                ctx.drawGuiTexture(ARMOR_HALF_TEXTURE, ((i + 1) * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_HALF_TEXTURE, ((i + 1) * 8) + 80, 30, 9, 9);
             } else {
-                ctx.drawGuiTexture(ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
             }
         }
 
@@ -178,10 +166,10 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         }
 
         @Override
-        public void renderWidget(DrawContext graphics, int mouseX, int mouseY, float partialTicks) {
+        public void drawIcon(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
             ButtonTextures icon = this.requirementsForTexture() ? this.texture : this.newTexture;
             Identifier resourcelocation = icon.get(this.isFocused(), this.isSelected());
-            graphics.drawGuiTexture(resourcelocation, this.getX(), this.getY(), this.width, this.height);
+            context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, resourcelocation, this.getX(), this.getY(), this.width, this.height);
         }
     }
 

@@ -17,13 +17,13 @@ public record GuardPatrolPacket(int guardId, boolean pressed) implements CustomP
     public static final CustomPayload.Id<GuardPatrolPacket> ID = new CustomPayload.Id<>(Identifier.of(GuardVillagers.MODID, "guard_patrol"));
     public static final PacketCodec<RegistryByteBuf, GuardPatrolPacket> PACKET_CODEC = PacketCodec.tuple(
             PacketCodecs.INTEGER, GuardPatrolPacket::guardId,
-            PacketCodecs.BOOL, GuardPatrolPacket::pressed,
+            PacketCodecs.BOOLEAN, GuardPatrolPacket::pressed,
             GuardPatrolPacket::new
     );
 
     public void handle(ServerPlayNetworking.Context context) {
 
-        Entity entity = context.player().getWorld().getEntityById(guardId);
+        Entity entity = context.player().getEntityWorld().getEntityById(guardId);
         if (entity instanceof GuardEntity guardEntity) {
             BlockPos pos = guardEntity.getBlockPos();
             if (guardEntity.getBlockPos() != null) {

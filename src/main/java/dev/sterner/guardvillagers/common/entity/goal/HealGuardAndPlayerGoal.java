@@ -5,17 +5,20 @@ import net.minecraft.component.type.PotionContentsComponent;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.TargetPredicate;
 import net.minecraft.entity.ai.brain.MemoryModuleType;
-import net.minecraft.entity.ai.brain.task.LookTargetUtil;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.mob.WitchEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
+import net.minecraft.entity.projectile.thrown.SplashPotionEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.Potions;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -48,10 +51,10 @@ public class HealGuardAndPlayerGoal extends Goal {
 
     @Override
     public boolean canStart() {
-        if (((VillagerEntity) this.healer).getVillagerData().getProfession() != VillagerProfession.CLERIC || this.healer.isSleeping()) {
+        if (!((VillagerEntity) this.healer).getVillagerData().profession().matchesKey(VillagerProfession.CLERIC) || this.healer.isSleeping()) {
             return false;
         }
-        List<LivingEntity> list = this.healer.getWorld().getNonSpectatingEntities(LivingEntity.class, this.healer.getBoundingBox().expand(10.0D, 3.0D, 10.0D));
+        List<LivingEntity> list = this.healer.getEntityWorld().getNonSpectatingEntities(LivingEntity.class, this.healer.getBoundingBox().expand(10.0D, 3.0D, 10.0D));
         if (!list.isEmpty()) {
             for (LivingEntity mob : list) {
                 if (mob != null) {
@@ -90,7 +93,7 @@ public class HealGuardAndPlayerGoal extends Goal {
         } else {
             this.seeTime = 0;
         }
-        LookTargetUtil.lookAt(healer, mob);
+        this.healer.getLookControl().lookAt(mob, 30.0f, 30.0f);
         if (!(d0 > (double) this.maxAttackDistance) && this.seeTime >= 5) {
             this.healer.getNavigation().stop();
         } else {
@@ -114,21 +117,24 @@ public class HealGuardAndPlayerGoal extends Goal {
 
     public void throwPotion(LivingEntity target, float distanceFactor) {
         Vec3d vec3d = target.getVelocity();
-        double d0 = target.getX() + vec3d.x - healer.getX();
-        double d1 = target.getEyeY() - (double) 1.1F - healer.getY();
-        double d2 = target.getZ() + vec3d.z - healer.getZ();
-        float f = MathHelper.sqrt((float) (d0 * d0 + d2 * d2));
+
         var potion = Potions.REGENERATION;
         if (target.getHealth() <= 4.0F) {
             potion = Potions.HEALING;
         } else {
             potion = Potions.REGENERATION;
         }
-        PotionEntity potionentity = new PotionEntity(healer.getWorld(), healer);
-        potionentity.setItem(PotionContentsComponent.createStack(Items.SPLASH_POTION, potion));
-        potionentity.setPitch(-20.0F);
-        potionentity.setVelocity(d0, d1 + (double) (f * 0.2F), d2, 0.75F, 8.0F);
-        healer.getWorld().playSound(null, healer.getX(), healer.getY(), healer.getZ(), SoundEvents.ENTITY_SPLASH_POTION_THROW, healer.getSoundCategory(), 1.0F, 0.8F + healer.getRandom().nextFloat() * 0.4F);
-        healer.getWorld().spawnEntity(potionentity);
+
+        double d = target.getX() + vec3d.x - healer.getX();
+        double e = target.getEyeY() - (double)1.1F - healer.getY();
+        double f = target.getZ() + vec3d.z - healer.getZ();
+        double g = Math.sqrt(d * d + f * f);
+
+        if (healer.getEntityWorld() instanceof ServerWorld serverWorld) {
+            ItemStack itemStack = PotionContentsComponent.createStack(Items.SPLASH_POTION, potion);
+            ProjectileEntity.spawnWithVelocity(SplashPotionEntity::new, serverWorld, itemStack, healer, d, e + g * 0.2, f, 0.75F, 8.0F);
+
+        }
+        healer.getEntityWorld().playSound(null, healer.getX(), healer.getY(), healer.getZ(), SoundEvents.ENTITY_SPLASH_POTION_THROW, healer.getSoundCategory(), 1.0F, 0.8F + healer.getRandom().nextFloat() * 0.4F);
     }
 }

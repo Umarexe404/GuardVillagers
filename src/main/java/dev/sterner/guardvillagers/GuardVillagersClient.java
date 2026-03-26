@@ -18,19 +18,21 @@ public class GuardVillagersClient implements ClientModInitializer {
 
     public static EntityModelLayer GUARD = new EntityModelLayer(GuardVillagers.id( "guard"), "main");
     public static EntityModelLayer GUARD_STEVE = new EntityModelLayer(GuardVillagers.id( "guard_steve"), "main");
-    public static EntityModelLayer GUARD_ARMOR_OUTER = new EntityModelLayer(GuardVillagers.id( "guard_armor_outer"), "main");
-    public static EntityModelLayer GUARD_ARMOR_INNER = new EntityModelLayer(GuardVillagers.id( "guard_armor_inner"), "main");
 
+    public static final EntityModelLayer GUARD_ARMOR_OUTER_HEAD = new EntityModelLayer(GuardVillagers.id("guard_armor_outer_head"), "main");
+    public static final EntityModelLayer GUARD_ARMOR_OUTER_CHEST = new EntityModelLayer(GuardVillagers.id("guard_armor_outer_chest"), "main");
+    public static final EntityModelLayer GUARD_ARMOR_OUTER_FEET = new EntityModelLayer(GuardVillagers.id("guard_armor_outer_feet"), "main");
+    public static final EntityModelLayer GUARD_ARMOR_INNER_LEGS = new EntityModelLayer(GuardVillagers.id("guard_armor_inner_legs"), "main");
 
     @Override
     public void onInitializeClient() {
         HandledScreens.register(GUARD_SCREEN_HANDLER, GuardVillagerScreen::new);
         EntityModelLayerRegistry.registerModelLayer(GUARD, GuardVillagerModel::createBodyLayer);
         EntityModelLayerRegistry.registerModelLayer(GUARD_STEVE, GuardSteveModel::createMesh);
-        EntityModelLayerRegistry.registerModelLayer(GUARD_ARMOR_OUTER, GuardArmorModel::createOuterArmorLayer);
-        EntityModelLayerRegistry.registerModelLayer(GUARD_ARMOR_INNER, GuardArmorModel::createInnerArmorLayer);
+        EntityModelLayerRegistry.registerModelLayer(GUARD_ARMOR_OUTER_HEAD, GuardArmorModel::createOuterArmorLayer);
+        EntityModelLayerRegistry.registerModelLayer(GUARD_ARMOR_OUTER_CHEST, GuardArmorModel::createOuterArmorLayer);
+        EntityModelLayerRegistry.registerModelLayer(GUARD_ARMOR_OUTER_FEET, GuardArmorModel::createOuterArmorLayer);
+        EntityModelLayerRegistry.registerModelLayer(GUARD_ARMOR_INNER_LEGS, GuardArmorModel::createInnerArmorLayer);
         EntityRendererRegistry.register(GUARD_VILLAGER, GuardRenderer::new);
-
-
     }
 }

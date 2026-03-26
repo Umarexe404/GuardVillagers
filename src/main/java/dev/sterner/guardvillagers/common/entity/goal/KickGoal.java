@@ -2,6 +2,7 @@ package dev.sterner.guardvillagers.common.entity.goal;
 
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import net.minecraft.entity.ai.goal.Goal;
+import net.minecraft.server.world.ServerWorld;
 
 public class KickGoal extends Goal {
 
@@ -22,7 +23,10 @@ public class KickGoal extends Goal {
         if (guard.kickTicks <= 0) {
             guard.kickTicks = 10;
         }
-        guard.tryAttack(guard.getTarget());
+        if (guard.getEntityWorld() instanceof ServerWorld serverWorld){
+
+            guard.tryAttack(serverWorld, guard.getTarget());
+        }
     }
 
     @Override

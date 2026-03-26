@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.6-SNAPSHOT'
+	id 'fabric-loom' version '1.14-SNAPSHOT'
 	id 'maven-publish'
 }
 
@@ -22,6 +22,13 @@ repositories {
 		url = "https://jitpack.io"
 	}
 	maven { url = "https://maven.shedaniel.me/" }
+	maven {
+		url = "https://maven.midnightdust.eu/releases"
+	}
+	maven {
+		name = "Terraformers"
+		url = "https://maven.terraformersmc.com/"
+	}
 }
 
 dependencies {
@@ -32,10 +39,9 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	//MidnightLib
-	modImplementation include ("maven.modrinth:midnightlib:${project.midnightlib_version}")
-
+	modImplementation include ("eu.midnightdust:midnightlib:${project.midnightlib_version}")
 	//modImplementation include("com.electronwill.night-config:core:${project.night_config_version}")
-
+	modLocalRuntime "com.terraformersmc:modmenu:${mod_menu_version}"
 }
 
 processResources {

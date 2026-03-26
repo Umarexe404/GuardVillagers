@@ -5,7 +5,6 @@ import dev.sterner.guardvillagers.GuardVillagers;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import dev.sterner.guardvillagers.common.network.GuardData;
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -14,6 +13,8 @@ import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 public class GuardVillagerScreenHandler extends ScreenHandler {
 
@@ -23,7 +24,7 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
     private static final EquipmentSlot[] EQUIPMENT_SLOT_ORDER = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
 
     public GuardVillagerScreenHandler(int syncId, PlayerInventory playerInventory, GuardData buf) {
-        this(syncId, playerInventory, playerInventory.player.getWorld().getEntityById(buf.guardId()) instanceof GuardEntity guard ? guard : null);
+        this(syncId, playerInventory, playerInventory.player.getEntityWorld().getEntityById(buf.guardId()) instanceof GuardEntity guard ? guard : null);
     }
 
     public GuardVillagerScreenHandler(int syncId, PlayerInventory playerInventory, GuardEntity guardEntity) {
@@ -59,8 +60,8 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             }
 
             @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_HELMET_SLOT_TEXTURE);
+            public Identifier getBackgroundSprite() {
+                return PlayerScreenHandler.EMPTY_HELMET_SLOT_TEXTURE;
             }
         });
         this.addSlot(new Slot(guardInventory, 1, 8, 26) {
@@ -86,8 +87,8 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             }
 
             @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_CHESTPLATE_SLOT_TEXTURE);
+            public Identifier getBackgroundSprite() {
+                return PlayerScreenHandler.EMPTY_CHESTPLATE_SLOT_TEXTURE;
             }
         });
         this.addSlot(new Slot(guardInventory, 2, 8, 44) {
@@ -113,8 +114,8 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             }
 
             @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_LEGGINGS_SLOT_TEXTURE);
+            public Identifier getBackgroundSprite() {
+                return PlayerScreenHandler.EMPTY_LEGGINGS_SLOT_TEXTURE;
             }
         });
         this.addSlot(new Slot(guardInventory, 3, 8, 62) {
@@ -140,8 +141,8 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             }
 
             @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_BOOTS_SLOT_TEXTURE);
+            public Identifier getBackgroundSprite() {
+                return PlayerScreenHandler.EMPTY_BOOTS_SLOT_TEXTURE;
             }
         });
         this.addSlot(new Slot(guardInventory, 4, 77, 62) {
@@ -162,8 +163,8 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             }
 
             @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_OFFHAND_ARMOR_SLOT);
+            public Identifier getBackgroundSprite() {
+                return PlayerScreenHandler.EMPTY_OFF_HAND_SLOT_TEXTURE;
             }
         });
 
