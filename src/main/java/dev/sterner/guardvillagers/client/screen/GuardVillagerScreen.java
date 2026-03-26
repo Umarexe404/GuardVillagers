@@ -85,8 +85,18 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         int i = (this.width - this.backgroundWidth) / 2;
         int j = (this.height - this.backgroundHeight) / 2;
         ctx.drawTexture(RenderPipelines.GUI_TEXTURED, GUARD_GUI_TEXTURES, i, j, 0f, 0f, this.backgroundWidth, this.backgroundHeight, 256, 256);
-        //InventoryScreen.drawEntity(ctx, i + 51, j + 75, 30    , (float) (i + 51) - this.mousePosX, (float) (j + 75 - 50) - this.mousePosY, this.guardEntity);
-        InventoryScreen.drawEntity(ctx, i + 51, j + 75, (i + 51), (j + 75 - 50), 30, 0.0625f, this.mousePosX, this.mousePosY, this.guardEntity);
+        InventoryScreen.drawEntity(
+                ctx,
+                i + 26,
+                j + 8,
+                i + 76,
+                j + 80,
+                30,
+                0.0625f,
+                this.mousePosX,
+                this.mousePosY,
+                this.guardEntity
+        );
     }
 
     private static final Identifier ARMOR_EMPTY_TEXTURE = Identifier.ofVanilla("hud/armor_empty");
