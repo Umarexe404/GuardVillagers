@@ -4,29 +4,28 @@ import dev.sterner.guardvillagers.GuardVillagers;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import io.netty.buffer.ByteBuf;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.entity.Entity;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
 
-public record GuardPatrolPacket(int guardId, boolean pressed) implements CustomPayload {
-    public static final CustomPayload.Id<GuardPatrolPacket> ID = new CustomPayload.Id<>(Identifier.of(GuardVillagers.MODID, "guard_patrol"));
-    public static final PacketCodec<RegistryByteBuf, GuardPatrolPacket> PACKET_CODEC = PacketCodec.tuple(
-            PacketCodecs.INTEGER, GuardPatrolPacket::guardId,
-            PacketCodecs.BOOLEAN, GuardPatrolPacket::pressed,
+public record GuardPatrolPacket(int guardId, boolean pressed) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<GuardPatrolPacket> ID = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(GuardVillagers.MODID, "guard_patrol"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, GuardPatrolPacket> PACKET_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, GuardPatrolPacket::guardId,
+            ByteBufCodecs.BOOL, GuardPatrolPacket::pressed,
             GuardPatrolPacket::new
     );
 
     public void handle(ServerPlayNetworking.Context context) {
 
-        Entity entity = context.player().getEntityWorld().getEntityById(guardId);
+        Entity entity = context.player().level().getEntity(guardId);
         if (entity instanceof GuardEntity guardEntity) {
-            BlockPos pos = guardEntity.getBlockPos();
-            if (guardEntity.getBlockPos() != null) {
+            BlockPos pos = guardEntity.blockPosition();
+            if (guardEntity.blockPosition() != null) {
                 guardEntity.setPatrolPos(pos);
             }
             guardEntity.setPatrolling(pressed);
@@ -34,7 +33,7 @@ public record GuardPatrolPacket(int guardId, boolean pressed) implements CustomP
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

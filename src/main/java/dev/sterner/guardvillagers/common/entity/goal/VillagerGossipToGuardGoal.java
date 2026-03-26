@@ -1,74 +1,73 @@
 package dev.sterner.guardvillagers.common.entity.goal;
 
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.brain.MemoryModuleType;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.passive.VillagerEntity;
-
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.npc.villager.Villager;
 
 public class VillagerGossipToGuardGoal extends Goal {
-    protected final VillagerEntity villager;
+    protected final Villager villager;
     protected GuardEntity guard;
 
-    public VillagerGossipToGuardGoal(VillagerEntity villager) {
+    public VillagerGossipToGuardGoal(Villager villager) {
         this.villager = villager;
-        this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK));
+        this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
     }
 
     @Override
-    public boolean canStart() {
-        if (this.villager.getBrain().hasMemoryModule(MemoryModuleType.INTERACTION_TARGET) && this.villager.getBrain().getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get() instanceof GuardEntity guard) {
+    public boolean canUse() {
+        if (this.villager.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET) && this.villager.getBrain().getMemory(MemoryModuleType.INTERACTION_TARGET).get() instanceof GuardEntity guard) {
             this.guard = guard;
-            long gameTime = guard.getEntityWorld().getTime();
+            long gameTime = guard.level().getGameTime();
             if (!nearbyVillagersInteractingWithGuards() && (gameTime < this.guard.lastGossipTime || gameTime >= this.guard.lastGossipTime + 1200L))
-                return this.guard.getTarget() == null && !this.villager.getEntityWorld().isNight();
+                return this.guard.getTarget() == null && !this.villager.level().isDarkOutside();
         }
         return false;
     }
 
     @Override
-    public boolean shouldContinue() {
-        return !nearbyVillagersInteractingWithGuards() && guard.getTarget() == null && this.villager.getBrain().hasMemoryModule(MemoryModuleType.INTERACTION_TARGET) && this.villager.getBrain().getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get().equals(guard);
+    public boolean canContinueToUse() {
+        return !nearbyVillagersInteractingWithGuards() && guard.getTarget() == null && this.villager.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET) && this.villager.getBrain().getMemory(MemoryModuleType.INTERACTION_TARGET).get().equals(guard);
     }
 
     @Override
     public void start() {
-        this.villager.getBrain().remember(MemoryModuleType.INTERACTION_TARGET, guard);
+        this.villager.getBrain().setMemory(MemoryModuleType.INTERACTION_TARGET, guard);
     }
 
     @Override
     public void tick() {
-        this.villager.getBrain().remember(MemoryModuleType.INTERACTION_TARGET, guard);
-        if (!nearbyVillagersInteractingWithGuards() && this.villager.getBrain().hasMemoryModule(MemoryModuleType.INTERACTION_TARGET) && this.villager.getBrain().getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get().equals(guard)) {
-            this.guard.getLookControl().lookAt(villager, 30.0f, 30.0f);
+        this.villager.getBrain().setMemory(MemoryModuleType.INTERACTION_TARGET, guard);
+        if (!nearbyVillagersInteractingWithGuards() && this.villager.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET) && this.villager.getBrain().getMemory(MemoryModuleType.INTERACTION_TARGET).get().equals(guard)) {
+            this.guard.getLookControl().setLookAt(villager, 30.0f, 30.0f);
 
             if (this.villager.distanceTo(guard) > 2.0D) {
-                this.villager.getNavigation().startMovingTo(guard, 0.5D);
+                this.villager.getNavigation().moveTo(guard, 0.5D);
             } else {
                 this.villager.getNavigation().stop();
-                guard.gossip(villager, guard.getEntityWorld().getTime());
+                guard.gossip(villager, guard.level().getGameTime());
             }
-            this.villager.lookAtEntity(guard, 30.0F, 30.0F);
-            this.villager.getLookControl().lookAt(guard, 30.0F, 30.0F);
+            this.villager.lookAt(guard, 30.0F, 30.0F);
+            this.villager.getLookControl().setLookAt(guard, 30.0F, 30.0F);
         }
     }
 
     @Override
     public void stop() {
-        this.villager.getBrain().forget(MemoryModuleType.INTERACTION_TARGET);
+        this.villager.getBrain().eraseMemory(MemoryModuleType.INTERACTION_TARGET);
     }
 
     private boolean nearbyVillagersInteractingWithGuards() {
-        if (villager.getBrain().hasMemoryModule(MemoryModuleType.MOBS)) {
-            Optional<List<LivingEntity>> list = villager.getBrain().getOptionalRegisteredMemory(MemoryModuleType.MOBS);
+        if (villager.getBrain().hasMemoryValue(MemoryModuleType.NEAREST_LIVING_ENTITIES)) {
+            Optional<List<LivingEntity>> list = villager.getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES);
             for (LivingEntity entity : list.get()) {
-                if (entity instanceof VillagerEntity nearbyVillager) {
-                    if (nearbyVillager.getBrain().hasMemoryModule(MemoryModuleType.INTERACTION_TARGET))
-                        return nearbyVillager.getBrain().hasMemoryModule(MemoryModuleType.INTERACTION_TARGET) && nearbyVillager.getBrain().getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get().equals(guard);
+                if (entity instanceof Villager nearbyVillager) {
+                    if (nearbyVillager.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET))
+                        return nearbyVillager.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET) && nearbyVillager.getBrain().getMemory(MemoryModuleType.INTERACTION_TARGET).get().equals(guard);
                 }
             }
         }
@@ -76,7 +75,7 @@ public class VillagerGossipToGuardGoal extends Goal {
     }
 
     @Override
-    public boolean shouldRunEveryTick() {
+    public boolean requiresUpdateEveryTick() {
         return true;
     }
 }

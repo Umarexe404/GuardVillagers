@@ -1,30 +1,29 @@
 package dev.sterner.guardvillagers.common.entity.goal;
 
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.NoPenaltyTargeting;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.ai.goal.WanderAroundGoal;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.EnumSet;
 import java.util.List;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
+import net.minecraft.world.entity.ai.util.DefaultRandomPos;
+import net.minecraft.world.phys.Vec3;
 
-public class GuardRunToEatGoal extends WanderAroundGoal {
+public class GuardRunToEatGoal extends RandomStrollGoal {
     private final GuardEntity guard;
     private int walkTimer;
 
     public GuardRunToEatGoal(GuardEntity guard) {
         super(guard, 1.0D);
         this.guard = guard;
-        this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.TARGET, Goal.Control.LOOK));
+        this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.TARGET, Goal.Flag.LOOK));
     }
 
     @Override
-    public boolean canStart() {
-        return guard.getHealth() < (guard.getMaxHealth() / 2) && GuardEatFoodGoal.isConsumable(guard.getOffHandStack()) && !guard.isEating() && guard.getTarget() != null && this.getWanderTarget() != null;
+    public boolean canUse() {
+        return guard.getHealth() < (guard.getMaxHealth() / 2) && GuardEatFoodGoal.isConsumable(guard.getOffhandItem()) && !guard.isEating() && guard.getTarget() != null && this.getPosition() != null;
     }
 
     @Override
@@ -39,11 +38,11 @@ public class GuardRunToEatGoal extends WanderAroundGoal {
     @Override
     public void tick() {
         --walkTimer;
-        List<LivingEntity> list = this.guard.getEntityWorld().getNonSpectatingEntities(LivingEntity.class, this.guard.getBoundingBox().expand(5.0D, 3.0D, 5.0D));
+        List<LivingEntity> list = this.guard.level().getEntitiesOfClass(LivingEntity.class, this.guard.getBoundingBox().inflate(5.0D, 3.0D, 5.0D));
         if (!list.isEmpty()) {
             for (LivingEntity mob : list) {
                 if (mob != null) {
-                    if (mob.getAttacking() instanceof GuardEntity || mob instanceof MobEntity && ((MobEntity) mob).getTarget() instanceof GuardEntity) {
+                    if (mob.getLastHurtMob() instanceof GuardEntity || mob instanceof Mob && ((Mob) mob).getTarget() instanceof GuardEntity) {
                         if (walkTimer < 20)
                             this.walkTimer += 5;
                     }
@@ -54,29 +53,29 @@ public class GuardRunToEatGoal extends WanderAroundGoal {
 
 
     @Override
-    protected Vec3d getWanderTarget() {
-        List<LivingEntity> list = this.guard.getEntityWorld().getNonSpectatingEntities(LivingEntity.class, this.guard.getBoundingBox().expand(5.0D, 3.0D, 5.0D));
+    protected Vec3 getPosition() {
+        List<LivingEntity> list = this.guard.level().getEntitiesOfClass(LivingEntity.class, this.guard.getBoundingBox().inflate(5.0D, 3.0D, 5.0D));
         if (!list.isEmpty()) {
             for (LivingEntity mob : list) {
                 if (mob != null) {
-                    if (mob.getAttacking() instanceof GuardEntity || mob instanceof MobEntity && ((MobEntity) mob).getTarget() instanceof GuardEntity) {
-                        return NoPenaltyTargeting.findFrom(guard, 16, 7, mob.getEntityPos());
+                    if (mob.getLastHurtMob() instanceof GuardEntity || mob instanceof Mob && ((Mob) mob).getTarget() instanceof GuardEntity) {
+                        return DefaultRandomPos.getPosAway(guard, 16, 7, mob.position());
                     }
                 }
             }
         }
-        return super.getWanderTarget();
+        return super.getPosition();
     }
 
     @Override
-    public boolean shouldContinue() {
-        return super.shouldContinue() && this.walkTimer > 0 && !guard.isEating();
+    public boolean canContinueToUse() {
+        return super.canContinueToUse() && this.walkTimer > 0 && !guard.isEating();
     }
 
     @Override
     public void stop() {
         super.stop();
-        this.guard.setCurrentHand(Hand.OFF_HAND);
+        this.guard.startUsingItem(InteractionHand.OFF_HAND);
         this.guard.getNavigation().stop();
     }
 }

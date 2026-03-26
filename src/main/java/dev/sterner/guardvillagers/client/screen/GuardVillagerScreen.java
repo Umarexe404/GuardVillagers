@@ -12,24 +12,21 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.gui.screen.ButtonTextures;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TexturedButtonWidget;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.screen.PlayerScreenHandler;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.ImageButton;
+import net.minecraft.client.gui.components.WidgetSprites;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 
-public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandler> {
+public class GuardVillagerScreen extends AbstractContainerScreen<GuardVillagerScreenHandler> {
     private static final Identifier GUARD_GUI_TEXTURES = GuardVillagers.id("textures/gui/inventory.png");
     /*
     private static final Identifier GUARD_GUI_TEXTURES = GuardVillagers.id("textures/gui/inventory.png");
@@ -40,22 +37,22 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
 
 
      */
-    private static final ButtonTextures GUARD_FOLLOWING_ICONS = new ButtonTextures(GuardVillagers.id( "following/following"),GuardVillagers.id( "following/following_highlighted"));
-    private static final ButtonTextures GUARD_NOT_FOLLOWING_ICONS = new ButtonTextures(GuardVillagers.id( "following/not_following"),GuardVillagers.id("following/not_following_highlighted"));
-    private static final ButtonTextures GUARD_PATROLLING_ICONS = new ButtonTextures(GuardVillagers.id( "patrolling/patrolling1"), GuardVillagers.id("patrolling/patrolling2"));
-    private static final ButtonTextures GUARD_NOT_PATROLLING_ICONS = new ButtonTextures(GuardVillagers.id("patrolling/notpatrolling1"), GuardVillagers.id( "patrolling/notpatrolling2"));
+    private static final WidgetSprites GUARD_FOLLOWING_ICONS = new WidgetSprites(GuardVillagers.id( "following/following"),GuardVillagers.id( "following/following_highlighted"));
+    private static final WidgetSprites GUARD_NOT_FOLLOWING_ICONS = new WidgetSprites(GuardVillagers.id( "following/not_following"),GuardVillagers.id("following/not_following_highlighted"));
+    private static final WidgetSprites GUARD_PATROLLING_ICONS = new WidgetSprites(GuardVillagers.id( "patrolling/patrolling1"), GuardVillagers.id("patrolling/patrolling2"));
+    private static final WidgetSprites GUARD_NOT_PATROLLING_ICONS = new WidgetSprites(GuardVillagers.id("patrolling/notpatrolling1"), GuardVillagers.id( "patrolling/notpatrolling2"));
 
 
-    private final PlayerEntity player;
+    private final Player player;
     private final GuardEntity guardEntity;
     private float mousePosX;
     private float mousePosY;
     private boolean buttonPressed;
 
-    public GuardVillagerScreen(GuardVillagerScreenHandler handler, PlayerInventory inventory, Text title) {
+    public GuardVillagerScreen(GuardVillagerScreenHandler handler, Inventory inventory, Component title) {
         super(handler, inventory, handler.guardEntity.getDisplayName());
-        this.titleX = 80;
-        this.playerInventoryTitleX = 100;
+        this.titleLabelX = 80;
+        this.inventoryLabelX = 100;
         this.player = inventory.player;
         guardEntity = handler.guardEntity;
     }
@@ -63,15 +60,15 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
     @Override
     protected void init() {
         super.init();
-        if (!GuardVillagersConfig.followHero || player.hasStatusEffect(StatusEffects.HERO_OF_THE_VILLAGE)) {
-            this.addDrawableChild(new GuardGuiButton(this.x + 100, this.height / 2 - 40, 20, 18, GUARD_FOLLOWING_ICONS, GUARD_NOT_FOLLOWING_ICONS, true,
+        if (!GuardVillagersConfig.followHero || player.hasEffect(MobEffects.HERO_OF_THE_VILLAGE)) {
+            this.addRenderableWidget(new GuardGuiButton(this.leftPos + 100, this.height / 2 - 40, 20, 18, GUARD_FOLLOWING_ICONS, GUARD_NOT_FOLLOWING_ICONS, true,
                     (button) -> {
                         ClientPlayNetworking.send(new GuardFollowPacket(guardEntity.getId()));
                     })
             );
         }
-        if (!GuardVillagersConfig.setGuardPatrolHotv || player.hasStatusEffect(StatusEffects.HERO_OF_THE_VILLAGE)) {
-            this.addDrawableChild(new GuardGuiButton(this.x + 120, this.height / 2 - 40, 20, 18, GUARD_PATROLLING_ICONS, GUARD_NOT_PATROLLING_ICONS, false,
+        if (!GuardVillagersConfig.setGuardPatrolHotv || player.hasEffect(MobEffects.HERO_OF_THE_VILLAGE)) {
+            this.addRenderableWidget(new GuardGuiButton(this.leftPos + 120, this.height / 2 - 40, 20, 18, GUARD_PATROLLING_ICONS, GUARD_NOT_PATROLLING_ICONS, false,
                     (button) -> {
                         buttonPressed = !buttonPressed;
                         ClientPlayNetworking.send(new GuardPatrolPacket(guardEntity.getId(), buttonPressed));
@@ -81,11 +78,11 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
     }
 
     @Override
-    protected void drawBackground(DrawContext ctx, float delta, int mouseX, int mouseY) {
-        int i = (this.width - this.backgroundWidth) / 2;
-        int j = (this.height - this.backgroundHeight) / 2;
-        ctx.drawTexture(RenderPipelines.GUI_TEXTURED, GUARD_GUI_TEXTURES, i, j, 0f, 0f, this.backgroundWidth, this.backgroundHeight, 256, 256);
-        InventoryScreen.drawEntity(
+    protected void renderBg(GuiGraphics ctx, float delta, int mouseX, int mouseY) {
+        int i = (this.width - this.imageWidth) / 2;
+        int j = (this.height - this.imageHeight) / 2;
+        ctx.blit(RenderPipelines.GUI_TEXTURED, GUARD_GUI_TEXTURES, i, j, 0f, 0f, this.imageWidth, this.imageHeight, 256, 256);
+        InventoryScreen.renderEntityInInventoryFollowsMouse(
                 ctx,
                 i + 26,
                 j + 8,
@@ -99,23 +96,23 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         );
     }
 
-    private static final Identifier ARMOR_EMPTY_TEXTURE = Identifier.ofVanilla("hud/armor_empty");
-    private static final Identifier ARMOR_HALF_TEXTURE = Identifier.ofVanilla("hud/armor_half");
-    private static final Identifier ARMOR_FULL_TEXTURE = Identifier.ofVanilla("hud/armor_full");
+    private static final Identifier ARMOR_EMPTY_TEXTURE = Identifier.withDefaultNamespace("hud/armor_empty");
+    private static final Identifier ARMOR_HALF_TEXTURE = Identifier.withDefaultNamespace("hud/armor_half");
+    private static final Identifier ARMOR_FULL_TEXTURE = Identifier.withDefaultNamespace("hud/armor_full");
 
-    private void drawHeart(DrawContext context, HeartType type, int x, int y, boolean half) {
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, type.getTexture(half), x, y, 9, 9);
+    private void drawHeart(GuiGraphics context, HeartType type, int x, int y, boolean half) {
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, type.getTexture(half), x, y, 9, 9);
     }
 
     @Override
-    protected void drawForeground(DrawContext ctx, int x, int y) {
-        super.drawForeground(ctx, x, y);
-        int health = MathHelper.ceil(guardEntity.getHealth());
-        int armor = guardEntity.getArmor();
+    protected void renderLabels(GuiGraphics ctx, int x, int y) {
+        super.renderLabels(ctx, x, y);
+        int health = Mth.ceil(guardEntity.getHealth());
+        int armor = guardEntity.getArmorValue();
 
-        boolean statusU = guardEntity.hasStatusEffect(StatusEffects.POISON);
-        boolean statusW = guardEntity.hasStatusEffect(StatusEffects.WITHER);
-        var heart = statusU ? HeartType.POISONED : statusW ? HeartType.WITHERED : guardEntity.isFrozen() ? HeartType.FROZEN : HeartType.NORMAL;
+        boolean statusU = guardEntity.hasEffect(MobEffects.POISON);
+        boolean statusW = guardEntity.hasEffect(MobEffects.WITHER);
+        var heart = statusU ? HeartType.POISONED : statusW ? HeartType.WITHERED : guardEntity.isFullyFrozen() ? HeartType.FROZEN : HeartType.NORMAL;
         //Health
         for (int i = 0; i < 10; i++) {
             this.drawHeart(ctx, HeartType.CONTAINER, (i * 8) + 80, 20, false);
@@ -134,35 +131,35 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         }
         //Armor
         for (int i = 0; i < 10; i++) {
-            ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_EMPTY_TEXTURE, (i * 8) + 80, 30, 9, 9);
+            ctx.blitSprite(RenderPipelines.GUI_TEXTURED, ARMOR_EMPTY_TEXTURE, (i * 8) + 80, 30, 9, 9);
         }
         for (int i = 0; i < armor / 2; i++) {
             if (armor % 2 != 0 && armor / 2 == i + 1) {
-                ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
-                ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_HALF_TEXTURE, ((i + 1) * 8) + 80, 30, 9, 9);
+                ctx.blitSprite(RenderPipelines.GUI_TEXTURED, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
+                ctx.blitSprite(RenderPipelines.GUI_TEXTURED, ARMOR_HALF_TEXTURE, ((i + 1) * 8) + 80, 30, 9, 9);
             } else {
-                ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
+                ctx.blitSprite(RenderPipelines.GUI_TEXTURED, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
             }
         }
 
     }
 
     @Override
-    public void render(DrawContext ctx, int mouseX, int mouseY, float partialTicks) {
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(ctx, mouseX, mouseY, partialTicks);
         this.mousePosX = (float) mouseX;
         this.mousePosY = (float) mouseY;
         super.render(ctx, mouseX, mouseY, partialTicks);
-        this.drawMouseoverTooltip(ctx, mouseX, mouseY);
+        this.renderTooltip(ctx, mouseX, mouseY);
     }
 
 
-    class GuardGuiButton extends TexturedButtonWidget {
-        private ButtonTextures texture;
-        private ButtonTextures newTexture;
+    class GuardGuiButton extends ImageButton {
+        private WidgetSprites texture;
+        private WidgetSprites newTexture;
         private boolean isFollowButton;
 
-        public GuardGuiButton(int xIn, int yIn, int widthIn, int heightIn, ButtonTextures resourceLocationIn, ButtonTextures newTexture, boolean isFollowButton, ButtonWidget.PressAction  onPressIn) {
+        public GuardGuiButton(int xIn, int yIn, int widthIn, int heightIn, WidgetSprites resourceLocationIn, WidgetSprites newTexture, boolean isFollowButton, Button.OnPress  onPressIn) {
             super(xIn, yIn, widthIn, heightIn, resourceLocationIn, onPressIn);
             this.texture = resourceLocationIn;
             this.newTexture = newTexture;
@@ -176,20 +173,20 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         }
 
         @Override
-        public void drawIcon(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-            ButtonTextures icon = this.requirementsForTexture() ? this.texture : this.newTexture;
-            Identifier resourcelocation = icon.get(this.isFocused(), this.isSelected());
-            context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, resourcelocation, this.getX(), this.getY(), this.width, this.height);
+        public void renderContents(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {
+            WidgetSprites icon = this.requirementsForTexture() ? this.texture : this.newTexture;
+            Identifier resourcelocation = icon.get(this.isFocused(), this.isHoveredOrFocused());
+            context.blitSprite(RenderPipelines.GUI_TEXTURED, resourcelocation, this.getX(), this.getY(), this.width, this.height);
         }
     }
 
     @Environment(value= EnvType.CLIENT)
     static enum HeartType {
-        CONTAINER(Identifier.ofVanilla("hud/heart/container"), Identifier.ofVanilla("hud/heart/container")),
-        NORMAL(Identifier.ofVanilla("hud/heart/full"), Identifier.ofVanilla("hud/heart/half")),
-        POISONED(Identifier.ofVanilla("hud/heart/poisoned_full"), Identifier.ofVanilla("hud/heart/poisoned_half")),
-        WITHERED(Identifier.ofVanilla("hud/heart/withered_full"), Identifier.ofVanilla("hud/heart/withered_half")),
-        FROZEN(Identifier.ofVanilla("hud/heart/frozen_full"), Identifier.ofVanilla("hud/heart/frozen_half"));
+        CONTAINER(Identifier.withDefaultNamespace("hud/heart/container"), Identifier.withDefaultNamespace("hud/heart/container")),
+        NORMAL(Identifier.withDefaultNamespace("hud/heart/full"), Identifier.withDefaultNamespace("hud/heart/half")),
+        POISONED(Identifier.withDefaultNamespace("hud/heart/poisoned_full"), Identifier.withDefaultNamespace("hud/heart/poisoned_half")),
+        WITHERED(Identifier.withDefaultNamespace("hud/heart/withered_full"), Identifier.withDefaultNamespace("hud/heart/withered_half")),
+        FROZEN(Identifier.withDefaultNamespace("hud/heart/frozen_full"), Identifier.withDefaultNamespace("hud/heart/frozen_half"));
 
         private final Identifier fullTexture;
         private final Identifier halfTexture;

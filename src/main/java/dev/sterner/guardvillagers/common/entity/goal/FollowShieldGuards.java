@@ -1,17 +1,17 @@
 package dev.sterner.guardvillagers.common.entity.goal;
 
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
-import net.minecraft.entity.ai.NoPenaltyTargeting;
-import net.minecraft.entity.ai.TargetPredicate;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.entity.ai.util.DefaultRandomPos;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.Vec3;
 
 public class FollowShieldGuards extends Goal {
-    private static final TargetPredicate NEARBY_GUARDS = TargetPredicate.createNonAttackable().setBaseMaxDistance(8.0D).ignoreVisibility();
+    private static final TargetingConditions NEARBY_GUARDS = TargetingConditions.forNonCombat().range(8.0D).ignoreLineOfSight();
     private final GuardEntity taskOwner;
     private GuardEntity guardtofollow;
     private double x;
@@ -23,20 +23,20 @@ public class FollowShieldGuards extends Goal {
     }
 
     @Override
-    public boolean canStart() {
-        List<? extends GuardEntity> list = this.taskOwner.getEntityWorld().getNonSpectatingEntities(this.taskOwner.getClass(), this.taskOwner.getBoundingBox().expand(8.0D, 8.0D, 8.0D));
+    public boolean canUse() {
+        List<? extends GuardEntity> list = this.taskOwner.level().getEntitiesOfClass(this.taskOwner.getClass(), this.taskOwner.getBoundingBox().inflate(8.0D, 8.0D, 8.0D));
         if (!list.isEmpty()) {
             for (GuardEntity guard : list) {
                 if (!guard.isInvisible()
-                        && guard.getOffHandStack().getItem() == Items.SHIELD
+                        && guard.getOffhandItem().getItem() == Items.SHIELD
                         && guard.isBlocking()
-                        && taskOwner.getEntityWorld().getEntitiesByClass(
+                        && taskOwner.level().getEntitiesOfClass(
                         GuardEntity.class,
-                        taskOwner.getBoundingBox().expand(5.0),
+                        taskOwner.getBoundingBox().inflate(5.0),
                         e -> e != guard && !e.isInvisible()
                 ).size() < 5) {
                     this.guardtofollow = guard;
-                    Vec3d vec3d = this.getPosition();
+                    Vec3 vec3d = this.getPosition();
                     if (vec3d == null) {
                         return false;
                     } else {
@@ -52,13 +52,13 @@ public class FollowShieldGuards extends Goal {
     }
 
     @Nullable
-    protected Vec3d getPosition() {
-        return NoPenaltyTargeting.findTo(this.taskOwner, 16, 7, this.guardtofollow.getEntityPos(), (float) Math.PI / 2F);
+    protected Vec3 getPosition() {
+        return DefaultRandomPos.getPosTowards(this.taskOwner, 16, 7, this.guardtofollow.position(), (float) Math.PI / 2F);
     }
 
     @Override
-    public boolean shouldContinue() {
-        return !this.taskOwner.getNavigation().isIdle() && !this.taskOwner.hasPassengers();
+    public boolean canContinueToUse() {
+        return !this.taskOwner.getNavigation().isDone() && !this.taskOwner.isVehicle();
     }
 
     @Override
@@ -69,6 +69,6 @@ public class FollowShieldGuards extends Goal {
 
     @Override
     public void start() {
-        this.taskOwner.getNavigation().startMovingTo(x, y, z, 0.4D);
+        this.taskOwner.getNavigation().moveTo(x, y, z, 0.4D);
     }
 }

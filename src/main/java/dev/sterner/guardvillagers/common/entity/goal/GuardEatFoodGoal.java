@@ -1,15 +1,14 @@
 package dev.sterner.guardvillagers.common.entity.goal;
 
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.SplashPotionItem;
-import net.minecraft.item.consume.UseAction;
-import net.minecraft.util.Hand;
-
 import java.util.List;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.SplashPotionItem;
 
 public class GuardEatFoodGoal extends Goal {
     public final GuardEntity guard;
@@ -19,21 +18,21 @@ public class GuardEatFoodGoal extends Goal {
     }
 
     public static boolean isConsumable(ItemStack stack) {
-        return stack.getUseAction() == UseAction.EAT || stack.getUseAction() == UseAction.DRINK && !(stack.getItem() instanceof SplashPotionItem);
+        return stack.getUseAnimation() == ItemUseAnimation.EAT || stack.getUseAnimation() == ItemUseAnimation.DRINK && !(stack.getItem() instanceof SplashPotionItem);
     }
 
     @Override
-    public boolean canStart() {
-        return guard.getHealth() < guard.getMaxHealth() && GuardEatFoodGoal.isConsumable(guard.getOffHandStack()) && guard.isEating() || guard.getHealth() < guard.getMaxHealth() && GuardEatFoodGoal.isConsumable(guard.getOffHandStack()) && guard.getTarget() == null && !guard.isAttacking();
+    public boolean canUse() {
+        return guard.getHealth() < guard.getMaxHealth() && GuardEatFoodGoal.isConsumable(guard.getOffhandItem()) && guard.isEating() || guard.getHealth() < guard.getMaxHealth() && GuardEatFoodGoal.isConsumable(guard.getOffhandItem()) && guard.getTarget() == null && !guard.isAggressive();
     }
 
     @Override
-    public boolean shouldContinue() {
-        List<LivingEntity> list = this.guard.getEntityWorld().getNonSpectatingEntities(LivingEntity.class, this.guard.getBoundingBox().expand(5.0D, 3.0D, 5.0D));
+    public boolean canContinueToUse() {
+        List<LivingEntity> list = this.guard.level().getEntitiesOfClass(LivingEntity.class, this.guard.getBoundingBox().inflate(5.0D, 3.0D, 5.0D));
         if (!list.isEmpty()) {
             for (LivingEntity mob : list) {
                 if (mob != null) {
-                    if (mob instanceof MobEntity && ((MobEntity) mob).getTarget() instanceof GuardEntity) {
+                    if (mob instanceof Mob && ((Mob) mob).getTarget() instanceof GuardEntity) {
                         return false;
                     }
                 }
@@ -45,6 +44,6 @@ public class GuardEatFoodGoal extends Goal {
 
     @Override
     public void start() {
-        guard.setCurrentHand(Hand.OFF_HAND);
+        guard.startUsingItem(InteractionHand.OFF_HAND);
     }
 }

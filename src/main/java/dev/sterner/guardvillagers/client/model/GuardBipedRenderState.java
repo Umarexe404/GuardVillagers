@@ -1,11 +1,11 @@
 package dev.sterner.guardvillagers.client.model;
 
 
-import net.minecraft.client.render.entity.state.BipedEntityRenderState;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 
-public class GuardBipedRenderState extends BipedEntityRenderState {
+public class GuardBipedRenderState extends HumanoidRenderState {
     public int kickTicks;
     public boolean hasRangedWeapon;
     public int guardVariant;
@@ -13,14 +13,14 @@ public class GuardBipedRenderState extends BipedEntityRenderState {
     public ItemStack offHandStack;
     public boolean isEating;
     public int itemUseTimeLeft;
-    public Hand activeHand;
+    public InteractionHand activeHand;
 
     public GuardBipedRenderState() {
         this.mainHandStack = ItemStack.EMPTY;
         this.offHandStack = ItemStack.EMPTY;
     }
 
-    public ItemStack getStackInHand(Hand hand) {
-        return hand == Hand.MAIN_HAND ? this.mainHandStack : this.offHandStack;
+    public ItemStack getStackInHand(InteractionHand hand) {
+        return hand == InteractionHand.MAIN_HAND ? this.mainHandStack : this.offHandStack;
     }
 }

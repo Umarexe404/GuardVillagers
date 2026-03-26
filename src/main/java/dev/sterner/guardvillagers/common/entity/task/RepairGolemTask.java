@@ -1,20 +1,19 @@
 package dev.sterner.guardvillagers.common.entity.task;
 
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.ai.brain.task.VillagerWorkTask;
-import net.minecraft.entity.passive.IronGolemEntity;
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Hand;
-
 import java.util.List;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.behavior.WorkAtPoi;
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
-public class RepairGolemTask extends VillagerWorkTask {
-    private IronGolemEntity golem;
+public class RepairGolemTask extends WorkAtPoi {
+    private IronGolem golem;
     private boolean hasStartedHealing;
 
     public RepairGolemTask() {
@@ -22,14 +21,14 @@ public class RepairGolemTask extends VillagerWorkTask {
     }
 
     @Override
-    protected boolean shouldRun(ServerWorld worldIn, VillagerEntity owner) {
-        List<IronGolemEntity> list = owner.getEntityWorld().getNonSpectatingEntities(IronGolemEntity.class, owner.getBoundingBox().expand(10.0D, 5.0D, 10.0D));
+    protected boolean checkExtraStartConditions(ServerLevel worldIn, Villager owner) {
+        List<IronGolem> list = owner.level().getEntitiesOfClass(IronGolem.class, owner.getBoundingBox().inflate(10.0D, 5.0D, 10.0D));
         if (!list.isEmpty()) {
-            for (IronGolemEntity golem : list) {
+            for (IronGolem golem : list) {
                 if (!golem.isInvisible() && golem.isAlive() && golem.getType() == EntityType.IRON_GOLEM) {
                     if (golem.getHealth() <= 60.0D || this.hasStartedHealing && golem.getHealth() < golem.getMaxHealth()) {
                         this.golem = golem;
-                        owner.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_INGOT));
+                        owner.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_INGOT));
                         return true;
                     }
                 }
@@ -39,36 +38,36 @@ public class RepairGolemTask extends VillagerWorkTask {
     }
 
     @Override
-    protected void finishRunning(ServerWorld worldIn, VillagerEntity entityIn, long gameTimeIn) {
+    protected void stop(ServerLevel serverLevel, Villager livingEntity, long l) {
         if (golem.getHealth() == golem.getMaxHealth()) {
             this.hasStartedHealing = false;
-            entityIn.equipStack(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            livingEntity.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
         }
     }
 
     @Override
-    protected void run(ServerWorld worldIn, VillagerEntity entityIn, long gameTimeIn) {
+    protected void start(ServerLevel worldIn, Villager entityIn, long gameTimeIn) {
         if (golem == null)
             return;
-        entityIn.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_INGOT));
+        entityIn.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_INGOT));
         this.healGolem(entityIn);
     }
 
     @Override
-    protected void keepRunning(ServerWorld worldIn, VillagerEntity entityIn, long gameTimeIn) {
+    protected void tick(ServerLevel serverLevel, Villager livingEntity, long l) {
         if (golem.getHealth() < golem.getMaxHealth())
-            this.healGolem(entityIn);
+            this.healGolem(livingEntity);
     }
 
-    public void healGolem(VillagerEntity healer) {
-        healer.getNavigation().startMovingTo(golem, 0.5);
+    public void healGolem(Villager healer) {
+        healer.getNavigation().moveTo(golem, 0.5);
         if (healer.distanceTo(golem) <= 2.0D) {
             this.hasStartedHealing = true;
-            healer.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_INGOT));
-            healer.swingHand(Hand.MAIN_HAND);
+            healer.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_INGOT));
+            healer.swing(InteractionHand.MAIN_HAND);
             golem.heal(15.0F);
             float pitch = 1.0F + (golem.getRandom().nextFloat() - golem.getRandom().nextFloat()) * 0.2F;
-            golem.playSound(SoundEvents.ENTITY_IRON_GOLEM_REPAIR, 1.0F, pitch);
+            golem.playSound(SoundEvents.IRON_GOLEM_REPAIR, 1.0F, pitch);
         }
     }
 }
