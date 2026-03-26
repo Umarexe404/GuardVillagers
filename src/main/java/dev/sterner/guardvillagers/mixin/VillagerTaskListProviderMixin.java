@@ -30,15 +30,20 @@ import java.util.List;
 
 @Mixin(VillagerGoalPackages.class)
 public class VillagerTaskListProviderMixin {
+
     @Inject(method = "getMeetPackage", cancellable = true, at = @At("RETURN"))
-    private static void createMeetTasks(Holder<VillagerProfession> registryEntry, float speed, CallbackInfoReturnable<ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>>> cir) {
+    private static void createMeetTasks(
+            float speed,
+            CallbackInfoReturnable<ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>>> cir) {
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> villagerList = new ArrayList<>(cir.getReturnValue());
         villagerList.add(Pair.of(2, new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), GateBehavior.OrderPolicy.ORDERED, GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new ShareGossipWithGuard(), 1), Pair.of(new TradeWithVillager(), 1)))));
         cir.setReturnValue(ImmutableList.copyOf(villagerList));
     }
 
     @Inject(method = "getIdlePackage", cancellable = true, at = @At("RETURN"))
-    private static void createIdleTasks(Holder<VillagerProfession> registryEntry, float speed, CallbackInfoReturnable<ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>>> cir) {
+    private static void createIdleTasks(
+            float speed,
+            CallbackInfoReturnable<ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>>> cir) {
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> villagerList = new ArrayList<>(cir.getReturnValue());
         villagerList.add(Pair.of(2, new RunOne<>(ImmutableList.of(Pair.of(InteractWith.of(GuardVillagers.GUARD_VILLAGER, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 3), Pair.of(InteractWith.of(EntityType.VILLAGER, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 3), Pair.of(new DoNothing(30, 60), 1)))));
         villagerList.add(Pair.of(2, new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), GateBehavior.OrderPolicy.ORDERED, GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new ShareGossipWithGuard(), 1), Pair.of(new TradeWithVillager(), 1)))));
@@ -46,7 +51,10 @@ public class VillagerTaskListProviderMixin {
     }
 
     @Inject(method = "getWorkPackage", cancellable = true, at = @At("RETURN"))
-    private static void createWorkTasks(Holder<VillagerProfession> profession, float speed, CallbackInfoReturnable<ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>>> cir) {
+    private static void createWorkTasks(
+            Holder<VillagerProfession> profession,
+            float speed,
+            CallbackInfoReturnable<ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>>> cir) {
         if (profession.is(VillagerProfession.TOOLSMITH) || profession.is(VillagerProfession.WEAPONSMITH) && GuardVillagersConfig.blackSmithHealing) {
             List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> villagerList = new ArrayList<>(cir.getReturnValue());
             villagerList.add(Pair.of(2, new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), GateBehavior.OrderPolicy.ORDERED, GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new RepairGolemTask(), 1), Pair.of(new TradeWithVillager(), 1)))));

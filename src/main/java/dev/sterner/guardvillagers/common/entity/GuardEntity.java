@@ -8,7 +8,6 @@ import dev.sterner.guardvillagers.common.network.GuardData;
 import dev.sterner.guardvillagers.common.screenhandler.GuardVillagerScreenHandler;
 import dev.sterner.guardvillagers.common.entity.goal.*;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.UUIDUtil;
@@ -79,6 +78,7 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerListener;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
@@ -109,7 +109,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, RangedAttackMob, ContainerListener, ReputationEventHandler {
+public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, RangedAttackMob, ReputationEventHandler {
     protected static final EntityDataAccessor<String> OWNER_UNIQUE_ID = SynchedEntityData.defineId(GuardEntity.class, EntityDataSerializers.STRING);
     private static final AttributeModifier USE_ITEM_SPEED_PENALTY = new AttributeModifier(GuardVillagers.id("speed_penalty"), -0.25D, AttributeModifier.Operation.ADD_VALUE);
     private static final EntityDataAccessor<Optional<BlockPos>> GUARD_POS = SynchedEntityData.defineId(GuardEntity.class, EntityDataSerializers.OPTIONAL_BLOCK_POS);
@@ -143,7 +143,6 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
 
     public GuardEntity(EntityType<? extends GuardEntity> type, Level world) {
         super(type, world);
-        this.guardInventory.addListener(this);
         this.setPersistenceRequired();
         if (GuardVillagersConfig.guardEntitysOpenDoors)
             ((GroundPathNavigation) this.getNavigation()).setCanOpenDoors(true);
@@ -873,12 +872,6 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
     public void onReputationEventFrom(ReputationEventType interaction, Entity entity) {
 
     }
-
-    @Override
-    public void containerChanged(Container sender) {
-
-    }
-
 
     @Override
     public void hurtArmor(DamageSource damageSource, float damage) {
