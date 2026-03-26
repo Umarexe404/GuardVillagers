@@ -7,14 +7,14 @@ import dev.sterner.guardvillagers.common.network.GuardPatrolPacket;
 import dev.sterner.guardvillagers.common.screenhandler.GuardVillagerScreenHandler;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -42,30 +42,26 @@ import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.CrossbowItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class GuardVillagers implements ModInitializer {
     public static final String MODID = "guardvillagers";
 
     public static final MenuType<GuardVillagerScreenHandler> GUARD_SCREEN_HANDLER =
-            new ExtendedScreenHandlerType<>(GuardVillagerScreenHandler::new, GuardData.PACKET_CODEC);
+            new ExtendedMenuType<>(GuardVillagerScreenHandler::new, GuardData.PACKET_CODEC);
 
     public static final ResourceKey<EntityType<?>> GUARD_VILLAGER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, id("guard"));
     public static final EntityType<GuardEntity> GUARD_VILLAGER =  EntityType.Builder.of(GuardEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build(GUARD_VILLAGER_KEY);
 
     public static final ResourceKey<Item> GUARD_SPAWN_EGG_KEY = ResourceKey.create(Registries.ITEM, id("guard_spawn_egg"));
-    public static final Item GUARD_SPAWN_EGG = Items.registerItem(GUARD_SPAWN_EGG_KEY, SpawnEggItem::new, new Item.Properties());
+    public static final Item GUARD_SPAWN_EGG = registerItem(GUARD_SPAWN_EGG_KEY, SpawnEggItem::new, new Item.Properties());
 
     public static InteractionHand getHandWith(LivingEntity livingEntity, Predicate<Item> itemPredicate) {
         return itemPredicate.test(livingEntity.getMainHandItem().getItem()) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
@@ -77,6 +73,11 @@ public class GuardVillagers implements ModInitializer {
 
     public static Identifier id(String name){
         return Identifier.fromNamespaceAndPath(MODID, name);
+    }
+
+    private static Item registerItem(final ResourceKey<Item> key, final Function<Item.Properties, Item> itemFactory, final Item.Properties properties) {
+        Item item = itemFactory.apply(properties.setId(key));
+        return Registry.register(BuiltInRegistries.ITEM, key, item);
     }
 
     @Override
@@ -91,16 +92,16 @@ public class GuardVillagers implements ModInitializer {
         Registry.register(BuiltInRegistries.SOUND_EVENT, id( "entity.guard.hurt"), GUARD_HURT);
         Registry.register(BuiltInRegistries.SOUND_EVENT, id( "entity.guard.death"), GUARD_DEATH);
 
-        PayloadTypeRegistry.playC2S().register(GuardFollowPacket.ID, GuardFollowPacket.PACKET_CODEC);
-        PayloadTypeRegistry.playC2S().register(GuardPatrolPacket.ID, GuardPatrolPacket.PACKET_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GuardFollowPacket.ID, GuardFollowPacket.PACKET_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GuardPatrolPacket.ID, GuardPatrolPacket.PACKET_CODEC);
 
-        PayloadTypeRegistry.playS2C().register(GuardFollowPacket.ID, GuardFollowPacket.PACKET_CODEC);
-        PayloadTypeRegistry.playS2C().register(GuardPatrolPacket.ID, GuardPatrolPacket.PACKET_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GuardFollowPacket.ID, GuardFollowPacket.PACKET_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GuardPatrolPacket.ID, GuardPatrolPacket.PACKET_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(GuardFollowPacket.ID, GuardFollowPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(GuardPatrolPacket.ID, GuardPatrolPacket::handle);
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register(entries -> entries.accept(GUARD_SPAWN_EGG));
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> entries.accept(GUARD_SPAWN_EGG));
 
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(this::onDamage);
         UseEntityCallback.EVENT.register(this::villagerConvert);
@@ -108,7 +109,7 @@ public class GuardVillagers implements ModInitializer {
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             if (entity instanceof Villager villagerEntity && villagerEntity.assignProfessionWhenSpawned()) {
                 var spawnChance = Mth.clamp(GuardVillagersConfig.spawnChancePerVillager, 0f, 1f);
-                if (world.random.nextFloat() < spawnChance) {
+                if (world.getRandom().nextFloat() < spawnChance) {
                     GuardEntity guardEntity = GUARD_VILLAGER.create(world, EntitySpawnReason.MOB_SUMMONED);
                     guardEntity.spawnWithArmor= true;
                     guardEntity.finalizeSpawn(world, world.getCurrentDifficultyAt(villagerEntity.blockPosition()), EntitySpawnReason.NATURAL, null);

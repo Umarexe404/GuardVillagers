@@ -7,6 +7,7 @@ import dev.sterner.guardvillagers.GuardVillagersConfig;
 import dev.sterner.guardvillagers.common.network.GuardData;
 import dev.sterner.guardvillagers.common.screenhandler.GuardVillagerScreenHandler;
 import dev.sterner.guardvillagers.common.entity.goal.*;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -954,7 +955,7 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
         this.entityData.set(GUARD_VARIANT, i);
     }
 
-    private class GuardScreenHandlerFactory implements ExtendedScreenHandlerFactory {
+    private class GuardScreenHandlerFactory implements ExtendedMenuProvider {
         private GuardEntity guard() {
             return GuardEntity.this;
         }

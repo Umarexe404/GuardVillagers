@@ -1,6 +1,5 @@
 package dev.sterner.guardvillagers.common.screenhandler;
 
-import com.mojang.datafixers.util.Pair;
 import dev.sterner.guardvillagers.GuardVillagers;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import dev.sterner.guardvillagers.common.network.GuardData;
@@ -13,8 +12,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.Nullable;
 
 public class GuardVillagerScreenHandler extends AbstractContainerMenu {
 
