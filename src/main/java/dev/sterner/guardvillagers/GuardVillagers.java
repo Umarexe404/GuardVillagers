@@ -61,7 +61,7 @@ public class GuardVillagers implements ModInitializer {
     public static final EntityType<GuardEntity> GUARD_VILLAGER =  EntityType.Builder.of(GuardEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build(GUARD_VILLAGER_KEY);
 
     public static final ResourceKey<Item> GUARD_SPAWN_EGG_KEY = ResourceKey.create(Registries.ITEM, id("guard_spawn_egg"));
-    public static final Item GUARD_SPAWN_EGG = registerItem(GUARD_SPAWN_EGG_KEY, SpawnEggItem::new, new Item.Properties());
+    public static final Item GUARD_SPAWN_EGG = registerItem(GUARD_SPAWN_EGG_KEY, SpawnEggItem::new, new Item.Properties().spawnEgg(GUARD_VILLAGER));
 
     public static InteractionHand getHandWith(LivingEntity livingEntity, Predicate<Item> itemPredicate) {
         return itemPredicate.test(livingEntity.getMainHandItem().getItem()) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
@@ -101,7 +101,7 @@ public class GuardVillagers implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(GuardFollowPacket.ID, GuardFollowPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(GuardPatrolPacket.ID, GuardPatrolPacket::handle);
 
-        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> entries.accept(GUARD_SPAWN_EGG));
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.SPAWN_EGGS).register(entries -> entries.accept(GUARD_SPAWN_EGG));
 
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(this::onDamage);
         UseEntityCallback.EVENT.register(this::villagerConvert);
