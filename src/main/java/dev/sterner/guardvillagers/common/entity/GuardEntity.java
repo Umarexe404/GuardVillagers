@@ -28,19 +28,7 @@ import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.*;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.ConversionParams;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LightningBolt;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.ReputationEventHandler;
-import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -401,20 +389,23 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
 
     @Override
     public ItemStack getItemBySlot(EquipmentSlot slot) {
-        switch (slot) {
-            case HEAD:
-                return this.guardInventory.getItem(0);
-            case CHEST:
-                return this.guardInventory.getItem(1);
-            case LEGS:
-                return this.guardInventory.getItem(2);
-            case FEET:
-                return this.guardInventory.getItem(3);
-            case OFFHAND:
-                return this.guardInventory.getItem(4);
-            case MAINHAND:
-                return this.guardInventory.getItem(5);
+        if (this.guardInventory != null) {
+            switch (slot) {
+                case HEAD:
+                    return this.guardInventory.getItem(0);
+                case CHEST:
+                    return this.guardInventory.getItem(1);
+                case LEGS:
+                    return this.guardInventory.getItem(2);
+                case FEET:
+                    return this.guardInventory.getItem(3);
+                case OFFHAND:
+                    return this.guardInventory.getItem(4);
+                case MAINHAND:
+                    return this.guardInventory.getItem(5);
+            }
         }
+
         return ItemStack.EMPTY;
     }
 
@@ -463,7 +454,8 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
     @Override
     public boolean doHurtTarget(ServerLevel world, Entity target) {
         if (this.isKicking()) {
-            ((LivingEntity) target).knockback(1.0F, Mth.sin(this.getYRot() * ((float) Math.PI / 180F)), (-Mth.cos(this.getYRot() * ((float) Math.PI / 180F))));
+            DamageSource source = world.damageSources().mobAttack(this);
+            ((LivingEntity) target).knockback(1.0, Mth.sin(this.getYRot() * ((float) Math.PI / 180)), (-Mth.cos(this.getYRot() * ((float) Math.PI / 180))), source, 0f);
             this.kickTicks = 10;
             level().broadcastEntityEvent(this, (byte) 4);
             this.lookAt(target, 90.0F, 90.0F);
@@ -490,7 +482,7 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
     @Override
     public void die(DamageSource damageSource) {
         if ((level().getDifficulty() == Difficulty.NORMAL || level().getDifficulty() == Difficulty.HARD) && damageSource.getEntity() instanceof Zombie) {
-            ZombieVillager zombieguard = (ZombieVillager)this.convertTo(EntityType.ZOMBIE_VILLAGER, ConversionParams.single(this, true, false), (zv) -> {
+            ZombieVillager zombieguard = (ZombieVillager)this.convertTo(EntityTypes.ZOMBIE_VILLAGER, ConversionParams.single(this, true, false), (zv) -> {
             });
             if (this.level().getDifficulty() != Difficulty.HARD && this.random.nextBoolean() || zombieguard == null) {
                 return;
@@ -540,11 +532,10 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
         return SIZE_BY_POSE.getOrDefault(pose, EntityDimensions.scalable(0.6F, 1.95F));
     }
 
-
     @Override
-    protected void blockUsingItem(ServerLevel world, LivingEntity entityIn) {
-        super.blockUsingItem(world, entityIn);
-        if (entityIn.getMainHandItem().getItem() instanceof AxeItem) this.disableShield(true, entityIn.getMainHandItem().getItem());
+    protected void blockUsingItem(ServerLevel level, LivingEntity attacker, DamageSource source, float damage) {
+        super.blockUsingItem(level, attacker, source, damage);
+        if (attacker.getMainHandItem().getItem() instanceof AxeItem) this.disableShield(true, attacker.getMainHandItem().getItem());
     }
 
     @Override
@@ -845,11 +836,11 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
     }
 
     @Override
-    public void blockedByItem(LivingEntity entityIn) {
+    protected void blockedByItem(LivingEntity defender, DamageSource source, float damage) {
         if (this.isKicking()) {
             this.setKicking(false);
         }
-        super.blockedByItem(this);
+        super.blockedByItem(defender, source, damage);
     }
 
     @Override
@@ -901,7 +892,7 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
     @Override
     public void thunderHit(ServerLevel world, LightningBolt lightning) {
         if (world.getDifficulty() != Difficulty.PEACEFUL) {
-            Witch witchentity = EntityType.WITCH.create(world, EntitySpawnReason.CONVERSION);
+            Witch witchentity = EntityTypes.WITCH.create(world, EntitySpawnReason.CONVERSION);
             if (witchentity == null) return;
             witchentity.copyPosition(this);
             witchentity.finalizeSpawn(world, world.getCurrentDifficultyAt(witchentity.blockPosition()), EntitySpawnReason.CONVERSION, null);

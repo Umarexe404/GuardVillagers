@@ -10,6 +10,7 @@ import dev.sterner.guardvillagers.common.entity.task.RepairGolemTask;
 import dev.sterner.guardvillagers.common.entity.task.ShareGossipWithGuard;
 import net.minecraft.core.Holder;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.DoNothing;
 import net.minecraft.world.entity.ai.behavior.GateBehavior;
@@ -45,7 +46,7 @@ public class VillagerTaskListProviderMixin {
             float speed,
             CallbackInfoReturnable<ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>>> cir) {
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> villagerList = new ArrayList<>(cir.getReturnValue());
-        villagerList.add(Pair.of(2, new RunOne<>(ImmutableList.of(Pair.of(InteractWith.of(GuardVillagers.GUARD_VILLAGER, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 3), Pair.of(InteractWith.of(EntityType.VILLAGER, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 3), Pair.of(new DoNothing(30, 60), 1)))));
+        villagerList.add(Pair.of(2, new RunOne<>(ImmutableList.of(Pair.of(InteractWith.of(GuardVillagers.GUARD_VILLAGER, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 3), Pair.of(InteractWith.of(EntityTypes.VILLAGER, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 3), Pair.of(new DoNothing(30, 60), 1)))));
         villagerList.add(Pair.of(2, new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), GateBehavior.OrderPolicy.ORDERED, GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new ShareGossipWithGuard(), 1), Pair.of(new TradeWithVillager(), 1)))));
         cir.setReturnValue(ImmutableList.copyOf(villagerList));
     }

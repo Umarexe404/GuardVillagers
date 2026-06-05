@@ -5,6 +5,7 @@ import java.util.List;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -33,7 +34,7 @@ public class HealGolemGoal extends Goal {
         List<IronGolem> list = this.healer.level().getEntitiesOfClass(IronGolem.class, this.healer.getBoundingBox().inflate(10.0D));
         if (!list.isEmpty()) {
             for (IronGolem golem : list) {
-                if (!golem.isInvisible() && golem.isAlive() && golem.getType() == EntityType.IRON_GOLEM) {
+                if (!golem.isInvisible() && golem.isAlive() && golem.getType() == EntityTypes.IRON_GOLEM) {
                     if (golem.getHealth() <= 60.0D || this.hasStartedHealing && golem.getHealth() < golem.getMaxHealth()) {
                         healer.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_INGOT));
                         this.golem = golem;
