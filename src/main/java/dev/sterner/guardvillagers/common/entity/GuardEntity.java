@@ -712,7 +712,7 @@ public class GuardEntity extends PathfinderMob implements CrossbowAttackMob, Ran
     public void performRangedAttack(LivingEntity target, float pullProgress) {
         this.shieldCoolDown = 8;
         if (this.getMainHandItem().getItem() instanceof CrossbowItem)
-            this.performCrossbowAttack(this, 6.0F);
+            this.performCrossbowAttack(this, 1.6F);
         if (this.getMainHandItem().getItem() instanceof BowItem) {
             ItemStack itemStack = this.getProjectile(this.getItemInHand(ProjectileUtil.getWeaponHoldingHand(this, Items.BOW)));
             ItemStack hand = this.getUseItem();
